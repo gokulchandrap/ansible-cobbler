@@ -1,0 +1,64 @@
+---
+- name: Install deps
+  apt: pkg={{item}} state=installed
+  with_items:
+  - python-dev
+  - python-setuptools
+  - openssl
+  - python-django
+  - python-simplejson
+  - python-virtualenv
+  - build-essential
+  - git
+  - createrepo
+  - apache2
+  - mkisofs
+  - libapache2-mod-wsgi
+  - python-cheetah
+  - python-netaddr
+  - python-simplejson
+  - python-urlgrabber
+  - python-yaml
+  - rsync
+  - syslinux
+  - atftpd
+  - yum-utils
+  - vim
+
+- name: Checkout cobbler from github
+  git: repo=https://github.com/cobbler/cobbler.git
+       dest=/usr/local/src/cobbler
+       version=v2.6.11
+
+- name: Build Cobbler From Source
+  command: make install
+  args:
+    chdir: /usr/local/src/cobbler
+
+- name: Enable Apache Mods
+  apache2_module: state=present name={{item}}
+  with_items:
+  - wsgi
+  - ssl
+  - rewrite
+  - proxy*
+  - xml2enc
+
+- name: Add vHost file for Cobbler
+  template:
+    src: cobbler-web-vhost.j2
+    dest: /etc/apache2/sites-available/cobbler.conf
+
+- name: Enable Cobbler Web
+  command: a2ensite cobbler
+
+- name: Add settings file for Cobbler Web
+  template:
+    src: settings.j2
+    dest: /usr/local/share/cobbler/web/settings.py
+
+- name: Restart Services
+  service: name={{item}} state=restarted
+  with_items:
+  - apache2
+  - cobblerd

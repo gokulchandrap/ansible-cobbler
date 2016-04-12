@@ -1,0 +1,6 @@
+---
+- hosts: cobblers
+  remote_user: root
+
+  roles:
+  - cobbler
